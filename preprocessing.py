@@ -9,8 +9,9 @@ def preprocessing(case_nr, slice_number_to_print):
     from skimage import exposure
     from skimage.morphology import disk, closing, opening, remove_small_holes
     from skimage.color import label2rgb, rgb2gray
-    import multiprocessing as mp
     import numexpr as ne
+    from joblib import Parallel, delayed
+    import multiprocessing
 
     def normalize(image):
         minimum = np.min(image)
@@ -26,9 +27,10 @@ def preprocessing(case_nr, slice_number_to_print):
 
     slice_nr_list = list(range(data.shape[0]))
 
-    def slice_pre(slice_nr):
 
-        data_normalized = normalize(data[slice_nr,:,:])
+    def slice_pre(data_slice):
+
+        data_normalized = normalize(data_slice)
         data_oryg = data_normalized.copy()
         data_hist = exposure.equalize_adapthist(data_normalized, clip_limit = 0.1)
 
@@ -56,16 +58,14 @@ def preprocessing(case_nr, slice_number_to_print):
         data_preprocessed = data_eq*data_mask
         data_preprocessed = opening(data_preprocessed, selem = disk(3))
 
-        data_masks[slice_nr,:,:] = data_mask
-        data_preprocessed_vol[slice_nr,:,:] = data_preprocessed
+        return data_preprocessed, data_mask
 
-        #return data_preprocessed
-
-    for slice_nr in slice_nr_list:
-        slice_pre(slice_nr)
-
-    #map(slice_pre,slice_nr_list)   
-
+    num_cores = multiprocessing.cpu_count()
+    data_list = Parallel(n_jobs=num_cores)(delayed(slice_pre)(data[slice_nr,:,:]) for slice_nr in slice_nr_list)
+    data_arr = np.array(data_list)
+    data_preprocessed_vol = data_arr[:,0,:,:]
+    data_masks = data_arr[:,1,:,:]
+    
     fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 3.5))
     fig.suptitle('Case: {}, Slice: {}'.format(case_nr, slice_number_to_print), fontsize=16)
     ax[0].imshow(data[slice_number_to_print,:,:]  , cmap='gray')
