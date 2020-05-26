@@ -12,6 +12,7 @@ def preprocessing(case_nr, slice_number_to_print):
     import numexpr as ne
     from joblib import Parallel, delayed
     import multiprocessing
+    import os
 
     def normalize(image):
         minimum = np.min(image)
@@ -20,15 +21,15 @@ def preprocessing(case_nr, slice_number_to_print):
         return result
 
     volume, segment = load_case(case_nr)
-    data_seg = segment.get_fdata()
+    #data_seg = segment.get_fdata()
     data = volume.get_fdata()
     data_preprocessed_vol = np.zeros(data.shape)
     data_masks = np.zeros(data.shape)
 
-    slice_nr_list = list(range(data.shape[0]))
+    slice_nr_list = list(range(data.shape[0])) #List to iterate by
 
-
-    def slice_pre(data_slice):
+    #Definition of preprocessing per one slice
+    def slice_pre(data_slice): 
 
         data_normalized = normalize(data_slice)
         data_oryg = data_normalized.copy()
@@ -65,23 +66,34 @@ def preprocessing(case_nr, slice_number_to_print):
     data_arr = np.array(data_list)
     data_preprocessed_vol = data_arr[:,0,:,:]
     data_masks = data_arr[:,1,:,:]
-    
-    fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 3.5))
-    fig.suptitle('Case: {}, Slice: {}'.format(case_nr, slice_number_to_print), fontsize=16)
-    ax[0].imshow(data[slice_number_to_print,:,:]  , cmap='gray')
-    ax[0].set_title('Original')
-    ax[0].axis('off')
 
-    ax[1].imshow(data_masks[slice_number_to_print,:,:], cmap='gray')
-    ax[1].set_title('mask')
-    ax[1].axis('off')
+    path = os.getcwd()
+    new_path = os.path.join(path, "preprocessed")
+    os.chdir(new_path)
 
-    ax[2].imshow(data_preprocessed_vol[slice_number_to_print,:,:], cmap='gray')
-    ax[2].set_title('preprocessed')
-    ax[2].axis('off')
+    img_pre = nibabel.Nifti1Image(data_preprocessed_vol, volume.affine)
+    nibabel.save(img_pre,'case{}_preprocessed.nii.gz'.format(case_nr))
+    #Saving to file
+    os.chdir(path)
 
-    plt.subplots_adjust()
+    #This par prints slice if user specifies slice number
+    if slice_number_to_print != -1:
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 3.5))
+        fig.suptitle('Case: {}, Slice: {}'.format(case_nr, slice_number_to_print), fontsize=16)
+        ax[0].imshow(data[slice_number_to_print,:,:]  , cmap='gray')
+        ax[0].set_title('Original')
+        ax[0].axis('off')
 
-    plt.show()
+        ax[1].imshow(data_masks[slice_number_to_print,:,:], cmap='gray')
+        ax[1].set_title('mask')
+        ax[1].axis('off')
 
-    return data_preprocessed_vol , data_seg, data_masks
+        ax[2].imshow(data_preprocessed_vol[slice_number_to_print,:,:], cmap='gray')
+        ax[2].set_title('preprocessed')
+        ax[2].axis('off')
+
+        plt.subplots_adjust()
+
+        plt.show()
+
+    #return data_preprocessed_vol, data_masks
