@@ -9,19 +9,55 @@ def size_normalization():
     import os
 
     def get_size(case_nr):
-        case = load_volume(case_nr)
-        case_size = case.get_fdata().shape[0]
+        
+        path = os.getcwd()
+        os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\preprocessed")
+
+        case_nb = nibabel.load('case{}_preprocessed.nii.gz'.format(case_nr))
+
+        case_size = case_nb.get_fdata().shape[0]
+        os.chdir(path)
 
         return case_size
 
-    case_nr_list = range(210)
+    case_nr_list = range(20)
     num_cores = multiprocessing.cpu_count()
     size_list = Parallel(n_jobs=num_cores)(delayed(get_size)(case_nr) for case_nr in case_nr_list)
     size_arr = np.array(size_list)
 
     max_size = np.amax(size_arr)
 
-    return max_size
+    def add_dummy_data(case_nr):
+        
+        path = os.getcwd()
+        os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\preprocessed")
+
+        case_nb = nibabel.load('case{}_preprocessed.nii.gz'.format(case_nr))
+        case_arr = case_nb.get_fdata()
+
+        case_size = case_arr.shape[0]
+
+        print(case_arr.shape)
+        diff = max_size - case_size
+
+        dummy_data = np.zeros((diff,512,512), dtype = np.float16)
+        
+        case_added = np.append(case_arr, dummy_data, axis = 0)
+
+        os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\preprocessed_added_dummy") 
+
+        img_dummy = nibabel.Nifti1Image(case_added, case_nb.affine)
+        nibabel.save(img_dummy,'case{}_preprocessed_added.nii.gz'.format(case_nr))
+
+        os.chdir(path)
+
+        return diff
+
+    diff_list = Parallel(n_jobs=num_cores)(delayed(add_dummy_data)(case_nr) for case_nr in case_nr_list)
+    diff_arr = np.array(diff_list)
+    max_diff = np.amax(diff_arr)
+
+    return max_size, max_diff
 
 
 def preprocessing(case_nr, slice_number_to_print):
