@@ -1,10 +1,17 @@
 #%%
-from preprocessing import preprocessing
-import multiprocessing
+from preprocessing import preprocessing, size_normalization
+import time
 
 #%%
 
-data_pre = preprocessing(115,  150)
-data_pre = preprocessing(20,  40)
 
- # %%
+for case_nr in range(210,210):
+    preprocessing(case_nr = case_nr ,slice_number_to_print = -1)
+
+#%%
+preprocessing(50, 30)
+
+# %%
+print("max size: {}".format(size_normalization()))
+
+# %%

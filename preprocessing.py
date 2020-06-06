@@ -1,6 +1,32 @@
+def size_normalization():
+
+    from starter_code.utils import load_volume
+    import numpy as np
+    import nibabel
+    import numexpr as ne
+    from joblib import Parallel, delayed
+    import multiprocessing
+    import os
+
+    def get_size(case_nr):
+        case = load_volume(case_nr)
+        case_size = case.get_fdata().shape[0]
+
+        return case_size
+
+    case_nr_list = range(210)
+    num_cores = multiprocessing.cpu_count()
+    size_list = Parallel(n_jobs=num_cores)(delayed(get_size)(case_nr) for case_nr in case_nr_list)
+    size_arr = np.array(size_list)
+
+    max_size = np.amax(size_arr)
+
+    return max_size
+
+
 def preprocessing(case_nr, slice_number_to_print):
 
-    from starter_code.utils import load_case
+    from starter_code.utils import load_volume
     import numpy as np
     import nibabel
     import matplotlib.pyplot as plt
@@ -20,7 +46,7 @@ def preprocessing(case_nr, slice_number_to_print):
         result = (image - minimum)/(maximum - minimum)
         return result
 
-    volume, segment = load_case(case_nr)
+    volume = load_volume(case_nr)
     #data_seg = segment.get_fdata()
     data = volume.get_fdata()
     data_preprocessed_vol = np.zeros(data.shape)
@@ -76,7 +102,7 @@ def preprocessing(case_nr, slice_number_to_print):
     #Saving to file
     os.chdir(path)
 
-    #This par prints slice if user specifies slice number
+    #This part prints slice if user specifies slice number
     if slice_number_to_print != -1:
         fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 3.5))
         fig.suptitle('Case: {}, Slice: {}'.format(case_nr, slice_number_to_print), fontsize=16)
@@ -95,5 +121,3 @@ def preprocessing(case_nr, slice_number_to_print):
         plt.subplots_adjust()
 
         plt.show()
-
-    #return data_preprocessed_vol, data_masks
