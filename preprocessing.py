@@ -1,6 +1,6 @@
 def size_normalization():
 
-    from starter_code.utils import load_volume
+    from starter_code.utils import load_volume, load_segmentation
     import numpy as np
     import nibabel
     import numexpr as ne
@@ -35,21 +35,20 @@ def size_normalization():
         case_nb = nibabel.load('case{}_preprocessed.nii.gz'.format(case_nr))
         segmentation_nb = load_segmentation(case_nr)
 
-        case_arr = case_nb.get_fdata()
-        segmentation_arr = segmentation_nb.get_fdata()
+        case_arr = case_nb.get_fdata().astype(np.float32)
+        segmentation_arr = segmentation_nb.get_fdata().astype(np.float32)
 
         case_size = case_arr.shape[0]
 
         diff = max_size - case_size
 
-        dummy_data = np.zeros((diff,512,512), dtype = np.float16)
-        dummy_data_segm = np.ones((diff,512,512), dtype = np.float16)
+        dummy_data = np.zeros((diff,512,512), dtype = np.float32)
+        dummy_data_segm = np.ones((diff,512,512), dtype = np.float32)
 
         case_added = np.append(case_arr, dummy_data, axis = 0)
         segment_added = np.append(segmentation_arr, dummy_data_segm, axis = 0)
 
         os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\preprocessed_added_dummy") 
-
         img_dummy = nibabel.Nifti1Image(case_added, case_nb.affine)
         nibabel.save(img_dummy,'case{}_preprocessed_added.nii.gz'.format(case_nr))
 
