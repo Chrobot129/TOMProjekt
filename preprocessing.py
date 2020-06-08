@@ -52,7 +52,31 @@ def size_normalization():
 
         return diff
 
+    def add_dummy_segment(case_nr):
+        
+        segment_nb = load_segmentation(case_nr)
+
+        segment_arr = segment_nb.get_fdata().astype(np.float32)
+
+        segment_size = segment_arr.shape[0]
+
+        diff = max_size - segment_size
+
+        dummy_data = np.zeros((diff,512,512), dtype = np.float32)
+
+        segment_added = np.append(segment_arr, dummy_data, axis = 0)
+
+        os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\segment_added_dummy") 
+        img_dummy = nibabel.Nifti1Image(segment_added, segment_nb.affine)
+        nibabel.save(img_dummy,'segmentation{}_added.nii.gz'.format(case_nr))
+
+        return diff
+
     diff_list = Parallel(n_jobs=num_cores)(delayed(add_dummy_data)(case_nr) for case_nr in case_nr_list)
+    diff_arr = np.array(diff_list)
+    max_diff = np.amax(diff_arr)
+
+    diff_list = Parallel(n_jobs=num_cores)(delayed(add_dummy_segment)(case_nr) for case_nr in case_nr_list)
     diff_arr = np.array(diff_list)
     max_diff = np.amax(diff_arr)
 
