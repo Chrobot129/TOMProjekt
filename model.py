@@ -11,7 +11,6 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import SGDClassifier
 import pandas as pd
 
-#Some case files are corrupted. For now only 20 cases.
 
 #%%
 
@@ -47,7 +46,8 @@ def convert_data(start_case, end_case):
         size = X.shape[0] * X.shape[1] * X.shape[2]
 
         X_conv = np.zeros((size, 4), dtype = np.float16)
-        Y_conv = np.zeros((size, 1), dtype = np.float16)
+
+        #X_conv = X.flatten()
 
         for z_cord in range(X.shape[0]):
             for y_cord in range(X.shape[1]):
@@ -59,44 +59,46 @@ def convert_data(start_case, end_case):
                     X_conv[point_id, 1] = y_cord
                     X_conv[point_id, 2] = z_cord
                     X_conv[point_id, 3] = X[z_cord, x_cord, y_cord]
-
-                    Y_conv[point_id,0] = Y[z_cord, x_cord, y_cord]
-
+                    
+        Y_conv = Y.flatten()
         os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\X_csv")
-        np.savez_compressed('X{}'.format(case_nr), X_conv, delimiter=',')
+        np.savez_compressed('X{}'.format(case_nr), X_conv)
 
         os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\Y_csv")
-        np.savez_compressed('Y{}'.format(case_nr), Y_conv, delimiter=',')
+        np.savez_compressed('Y{}'.format(case_nr), Y_conv)
 
-        return size 
+        return size
 
     case_nr_list = range(start_case, end_case)
 
     for case_nr in case_nr_list:
         single_case_conversion(case_nr)
+    
 
 #%%
-convert_data(7,30)
+convert_data(0,20)
 #%%
 
 def get_conv_data(case_nr):
     os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\X_csv")
-    X = np.load('X{}'.format(case_nr))
+    X = np.load('X{}.npz'.format(case_nr))
+    X = X["arr_0.npy"]
 
     os.chdir("c:\\Users\\Chrobot\\Desktop\\TOM\\Projekt\\kits19\\Y_csv")
-    Y = np.load('Y{}'.format(case_nr))
+    Y = np.load('Y{}.npz'.format(case_nr))
+    Y = Y["arr_0.npy"]
 
     return X,Y
 
 # %%
 clf= SGDClassifier(max_iter=1000, tol=1e-3, n_jobs=-1)
 
-cases_nr_list = range(20)
+cases_nr_list = range(2)
 
-Y_labels = get_conv_data(0)[1]
-
-labels = np.unique(Y_labels)
-
+Y_test = get_conv_data(0)[1]
+#%%
+labels = np.unique(Y_test)
+#%%
 for case_nr in cases_nr_list:
     X,Y = get_conv_data(case_nr)
 
@@ -104,8 +106,10 @@ for case_nr in cases_nr_list:
 
 #%%
 
-test_case_list = range(20, 30)
+test_case_list = range(2, 3)
 
 for case_nr in test_case_list:
-    X,Y = get_con_data(case_nr)
-    print(clf.score(X,Y))
+    X,Y = get_conv_data(case_nr)
+    print(clf.score(X,Y ))
+
+# %%
