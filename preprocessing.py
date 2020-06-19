@@ -1,5 +1,6 @@
-def size_normalization():
+def size_normalization(starting_case, ending_case):
 
+    #Different slice
     from starter_code.utils import load_volume, load_segmentation
     import numpy as np
     import nibabel
@@ -20,7 +21,7 @@ def size_normalization():
 
         return case_size
 
-    case_nr_list = range(20)
+    case_nr_list = range(starting_case, ending_case)
     num_cores = multiprocessing.cpu_count()
     size_list = Parallel(n_jobs=num_cores)(delayed(get_size)(case_nr) for case_nr in case_nr_list)
     size_arr = np.array(size_list)
