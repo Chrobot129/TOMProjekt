@@ -1,0 +1,12 @@
+Brak aktualnie działającej implementacji. Brak wyników.
+
+Uwagi:
+1) Podejście wydaje sie nie do końca przemyślane - proszę pamiętać, że problemem jest segmentacja nerki, nie klasyfikacja pojedycznych pikseli.
+Zaproponowane rozwiązanie oparte o SVM wykorzystujący jedynie dane o poszczególnych pikselach (ich współrzędne oraz wartość intensywności) nie będzie działać dobrze z uwagi na brak wzięcia pod uwagę sąsiedztwa.
+Tak sformułowany problem jest niesparowalny żadną rozsądną funkcją (a użycie np. jądra wielomianowego o dużym stopniu będzie prowadzić do overfittingu).
+Proponuję zapoznać się z literaturą dotyczącą segmentacji obrazów medycznych i zaimplementować jeden z sprawdzonych algorytmów (rozrost obszarów, metoda aktywnych konturów, sieci głębokie).
+
+2) Ewaluacja na podstawie ACC/TPR/FPR i innych metryk nie jest używana w przypadku segmentacji medycznych. Są to wartości trudne do interpretacji i porównania.
+Np. jeżeli jeden obraz ma 1000 vokseli, a nerka zajmuje w nim 50 vokseli, a drugi ma 2000 vokseli, a nerka zajmuje 30 vokseli - jak obiektywnie dokonać uśrednienia zaproponowanych wartości?
+Indeks Jaccarda jest w porządku.
+
