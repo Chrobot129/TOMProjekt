@@ -2,19 +2,15 @@
 from starter_code.utils import load_segmentation
 import numpy as np
 import nibabel
-import pandas as pd
 import tensorflow as tf
-import numpy as np 
 import os
 import skimage.io as io
 import skimage.transform as trans
-import numpy as np
 from keras.models import *
 from keras.layers import *
 from keras.optimizers import *
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from keras import backend as keras
-from skimage import color
 import matplotlib.pyplot as plt
 #tf.compat.v1.disable_eager_execution()
 
@@ -44,7 +40,24 @@ def get_data(case_nr):
     X = get_case(case_nr)
     Y = get_segment(case_nr)
     return X,Y
+    
+def prep_data(case_nr):
+    train_data, train_mask  = get_data(case_nr)
+    test_data, test_mask = get_data(case_nr+1)
 
+    train_data = np.expand_dims(train_data, axis=3)
+    train_mask = np.expand_dims(train_mask, axis=3)
+
+    train_data = np.resize(train_data, (train_data.shape[0],512,512,1))
+    train_mask = np.resize(train_mask, (train_mask.shape[0],512,512,1))
+
+    test_data = np.expand_dims(test_data, axis=3)
+    test_mask = np.expand_dims(test_mask, axis=3)
+
+    test_data = np.resize(test_data, (test_data.shape[0],512,512,1))
+    test_mask = np.resize(test_mask, (test_mask.shape[0],512,512,1))
+
+    return train_data,train_mask,test_data,test_mask
 #%%
 def display(display_list):
   plt.figure(figsize=(15, 15))
@@ -60,37 +73,25 @@ def display(display_list):
 
 #%%
 
-def create_mask(pred_mask):
-  pred_mask = tf.argmax(pred_mask, axis=-1)
-  pred_mask = pred_mask[..., tf.newaxis]
-  return pred_mask[0]
-
-def show_predictions(dataset=None, num=1):
-  if dataset:
-    for image, mask in dataset:
-      pred_mask = model.predict(image)
-      display([image[0], mask[0], create_mask(pred_mask)])
-  else:
-    display([sample_image, sample_mask,
-             create_mask(model.predict(sample_image[tf.newaxis, ...]))])
-
-#%%
-
 
 def unet(pretrained_weights = None,input_size = (512,512,1)):
     inputs = Input(input_size)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+
     conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
     conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv2)
     pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+
     conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool2)
     conv3 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv3)
     pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
     conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
     drop4 = Dropout(0.5)(conv4)
+    
     pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
 
     conv5 = Conv2D(1024, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool4)
