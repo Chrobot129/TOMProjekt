@@ -3,33 +3,51 @@ from preprocessing import preprocessing
 from model import *
 import tensorflow as tf
 from validation import *
-from keras import backend as K
-tf.compat.v1.disable_eager_execution()
+import tensorflow.keras.backend as K
+from scipy.spatial.distance import directed_hausdorff
 
 #%%
-for case_nr in range(0,20):
+for case_nr in range(0,209):
     preprocessing(case_nr = case_nr ,slice_number_to_print = -1)
 
 #%%
-
 model = unet()
+
 
 model.summary()
 model_checkpoint = ModelCheckpoint(filepath = 'unet_kidneys.hdf5', monitor='loss',verbose=1, save_best_only=True)
+plot = tf.keras.utils.plot_model(model, show_shapes=True, to_file="model.png", expand_nested = True )
 #%%
-for i in range(100):
-    train_data, train_mask, test_data, test_mask = prep_data(i)
-    model.fit(x = train_data, y = train_mask,epochs=2,callbacks=[model_checkpoint], batch_size=2)
+
+for i in range(50):
+    train_data, train_mask,x,y = prep_data(i)
+    model.fit(x = train_data, y = train_mask,epochs=1,callbacks=[model_checkpoint], batch_size=2)
 
 #%%
-train_data,train_mask,test_data,test_mask = prep_data(102)
+test_data, test_mask,x,y = prep_data(100)
 results = model.predict(x = test_data, batch_size=2 ,verbose=1)
 #%%
-slice_nr = 120
+slice_nr = 200
 display([test_data[slice_nr,:,:,:], test_mask[slice_nr,:,:,:], results[slice_nr,:,:,:]]) 
 
-#%%
-jacard = jaccard_distance_loss(K.variable(test_mask), K.variable(results.astype(np.float64))).eval(session = tf.compat.v1.keras.backend.get_session())
+haus = directed_hausdorff(test_mask,results)
 
-print('jaccard_distance_loss',jacard)
-# %%
+#%%
+haus_list = []
+
+for i in range(150, 201):
+    test_data, test_mask,x,y = prep_data(i)
+    results = model.predict(x = test_data, batch_size=2 ,verbose=1)
+    for j in range(test_mask.shape[0]):
+
+        haus = directed_hausdorff(test_mask[j,:,:,:],results[j,:,:,:])
+
+        haus_list.append(haus)
+
+arr = np.array(haus_list)
+mean = np.mean(arr)
+std = np.std(arr)
+
+
+
+

@@ -40,24 +40,18 @@ def get_data(case_nr):
     X = get_case(case_nr)
     Y = get_segment(case_nr)
     return X,Y
-    
+
 def prep_data(case_nr):
-    train_data, train_mask  = get_data(case_nr)
-    test_data, test_mask = get_data(case_nr+1)
+    data, mask  = get_data(case_nr)
 
-    train_data = np.expand_dims(train_data, axis=3)
-    train_mask = np.expand_dims(train_mask, axis=3)
+    data = np.expand_dims(data, axis=3)
+    mask = np.expand_dims(mask, axis=3)
 
-    train_data = np.resize(train_data, (train_data.shape[0],512,512,1))
-    train_mask = np.resize(train_mask, (train_mask.shape[0],512,512,1))
+    data = np.resize(data, (data.shape[0],512,512,1))
+    mask = np.resize(mask, (mask.shape[0],512,512,1))
 
-    test_data = np.expand_dims(test_data, axis=3)
-    test_mask = np.expand_dims(test_mask, axis=3)
 
-    test_data = np.resize(test_data, (test_data.shape[0],512,512,1))
-    test_mask = np.resize(test_mask, (test_mask.shape[0],512,512,1))
-
-    return train_data,train_mask,test_data,test_mask
+    return data,mask
 #%%
 def display(display_list):
   plt.figure(figsize=(15, 15))
